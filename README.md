@@ -32,7 +32,8 @@ And create a new server on `bkp0` called `store0`:
 
 ```perl
 $Conf{ClientNameAlias} = '192.168.1.123';
-$Conf{RsyncClientPath} = 'sudo /usr/bin/nice -n 19 /usr/bin/ionice -c3 /usr/bin/rsync';$Conf{RsyncClientCmd} = '$sshPath -l backuppc -q -x $host $rsyncPath $argList+';
+$Conf{RsyncClientPath} = 'sudo /usr/bin/nice -n 19 /usr/bin/ionice -c3 /usr/bin/rsync';
+$Conf{RsyncClientCmd} = '$sshPath -l backuppc -q -x $host $rsyncPath $argList+';
 $Conf{RsyncClientRestoreCmd} = '$sshPath -l backuppc  -q -x $host $rsyncPath $argList+';
 $Conf{RsyncShareName} = [
   '/srv/restore'
@@ -88,7 +89,7 @@ time sudo -u backuppc /usr/share/backuppc/bin/BackupPC_restore store0 store0 ser
 
 Finally backup the restoration to restic repository:
 ```shell
-mv /srv/restore/serverA_1324 /srv/restore/cw-bkp0
+mv /srv/restore/serverA_1324 /srv/restore/serverA
 time restic --host 'serverA' -r /srv/backup/backuppc backup --verbose --time '2018-08-08 16:00:42.153007776' --tag 1324 /srv/restore/serverA
 mv /srv/restore/serverA_
 time rm -rf /srv/restore/serverA_
