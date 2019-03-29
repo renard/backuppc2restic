@@ -1,0 +1,79 @@
+#!/bin/bash
+
+
+# For a given server (pc) gereate a resoration file of each backups and
+# shares.
+#
+# A second file is also generated with all the commands that should be typed
+# to restore all backups.
+
+
+# The PC to restore (as named in backuppc)
+pc="$1"
+
+# The target host to retore to.
+restore_pc=store0
+
+# backuppc root directory
+BPC_ROOT=/var/lib/backuppc
+# Restoration share on restore_pc
+share_dest='/srv/restore'
+
+# restic command. You may need to add the repo password
+restic_cmd=restic --host "$pc" -r /srv/backup/backuppc
+
+cd $BPC_ROOT/$pc
+
+backups=$(ls -d [0-9]*)
+
+for b in $backups; do
+    cd $b
+    si=1
+    date=$(stat --format='%y' . | awk '{print $1,$2}')
+    shares=$(ls -d * | grep -vE 'attrib|backupInfo' | sed 's,%2f,/,g;s,^f,,')
+    for s in $shares; do
+	echo "found backup: $date $b - $s"
+	cat <<EOF > $BPC_ROOT/$restore_pc/${pc}_${b}_${si}
+%RestoreReq = (
+  'fileList' => [
+    '/'
+  ],
+  'shareDest' => '$share_dest',
+  'pathHdrDest' => '/$pc-$b$s',
+  'num' => '$b',
+  'reqTime' => '1553175044',
+  'shareSrc' => '$s',
+  'pathHdrSrc' => '/',
+  'hostDest' => '$restore_pc',
+  'hostSrc' => '$pc',
+  'user' => 'backuppc'
+);
+EOF
+	si=$((si + 1))
+    done
+
+    cmd_file="$BPC_ROOT/$restore_pc/${pc}_${b}.txt"
+    echo > $cmd_file
+    
+    echo '# Run this part on target restoration server' >> $cmd_file
+    for s in $shares; do
+	echo "mkdir $share_dest/$pc-$b/$s" >> $cmd_file
+    done
+    echo >> $cmd_file
+    echo '# Run this on BackupPC server' >> $cmd_file
+    si=1
+    for s in $shares; do
+	echo "time sudo -u backuppc /usr/share/backuppc/bin/BackupPC_restore $restore_pc $restore_pc ${pc}_${b}_${si}" >> $cmd_file
+	si=$((si + 1))
+    done
+
+    cat <<EOF >> $cmd_file
+
+# Run this on target restoration server (as root)
+mv $share_dest/$pc-$b $share_dest/$pc
+time $restic_cmd backup --verbose --time '$date' --tag $b $share_dest/$pc
+mv $share_dest/${pc}_
+time rm -rf $share_dest/${pc}_
+EOF
+    cd $BPC_ROOT/$pc
+done
