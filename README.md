@@ -107,14 +107,19 @@ total of:
 * 285 full backups of total size 47668.72GB (prior to pooling and compression),
 * 41 incr backups of total size 300.50GB (prior to pooling and compression).
 
-It took me several weeks and isn't finished yet (at time of writing).
-
-
 It takes about 2 to 3 hours to restore 100Gb of data and one extra hour to
 import into restic. The bottleneck here is mainly the harddrives that have
 poor writing performances about 15MB/s (120Mb/s). Those metrics may vary
 with the kind of data to migrate.
 
+It took me several weeks to perform (almost) full migration. Almost because
+some backups (such a photos archives) are append-only and this made no sense
+to restore all intermediate backups.
+
+At the end BackupPC compressed pool is 1,533,573,840 bytes whereas restic is
+1,753,262,388 (a overhead of 219,688,548 bytes, 210Gb or 14%). Getting an
+exact volume of source data is difficult since data are always changing. The
+approximate source size was around 2Tb which lead restic dedup to about 12%.
 
 ## Notes
 
